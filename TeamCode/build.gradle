@@ -31,7 +31,11 @@ dependencies {
 
     implementation 'com.acmerobotics.roadrunner:core:0.5.5'
 
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.7'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.7'//Random dependency to make LogFiles work
+}
+
+dependencies {
+    implementation 'org.openftc:easyopencv:1.6.2'
 }
 
 
