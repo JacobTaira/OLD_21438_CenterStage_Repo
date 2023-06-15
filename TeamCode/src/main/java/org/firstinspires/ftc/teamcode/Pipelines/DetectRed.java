@@ -1,8 +1,6 @@
 package org.firstinspires.ftc.teamcode.Pipelines;
 
 
-
-import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -17,14 +15,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DetectRed extends OpenCvPipeline {
-    enum RedLocation {
+    public enum RedLocation {
         UNDETECTED, //Constants on the location of red in the camera frame, not seen, left in frame, right in frame, center in frame
         LEFT,
         RIGHT,
         CENTER
     }
 
-    private int width;//width of the image
+    private final int width;//width of the image
     private Telemetry telemetry;
     private RedLocation locate;
 
@@ -101,7 +99,6 @@ public class DetectRed extends OpenCvPipeline {
         Rect[] boundRect = new Rect[contours.size()];
 
 
-
         for (int i = 0; i < contours.size(); i++) {
             contoursPoly[i] = new MatOfPoint2f();
             Imgproc.approxPolyDP(new MatOfPoint2f(contours.get(i).toArray()), contoursPoly[i], 3, true);
@@ -113,8 +110,8 @@ public class DetectRed extends OpenCvPipeline {
          * image to find the relative location of the tape to the image (i.e. towards the left, right, or center)
          */
 
-        double leftImage = 0.25*width;//the left of the image can be classified as everything bellow this value
-        double rightImage = 0.75*width;//the right of the image can be classified as everything above this value
+        double leftImage = 0.25 * width;//the left of the image can be classified as everything bellow this value
+        double rightImage = 0.75 * width;//the right of the image can be classified as everything above this value
         //TODO need to tune these values to make sure they actually work and done under or overshoot
 
         boolean left = false;//conditionals for the if statements later
@@ -132,28 +129,28 @@ public class DetectRed extends OpenCvPipeline {
         }
 
         //checking if the object is in the center if it is not on the left, nor right of the image and if the color we want to detect exists in the image
-        center = !left && !right && (contours.size()>0);
+        center = !left && !right && (contours.size() > 0);
 
 
         //officially stating what the location of the tape is
         if (left) {
             locate = RedLocation.LEFT;
-        }else if (right) {
+        } else if (right) {
             locate = RedLocation.RIGHT;
-        }else if(center){
+        } else if (center) {
             locate = RedLocation.CENTER;
-        }else{
+        } else {
             locate = RedLocation.UNDETECTED;
         }
         telemetry.update();
 
-        telemetry.addData("Location",locate);
+        telemetry.addData("Location", locate);
 
 
-
-        return edges;
+        return edges;  //displaying edges of all red objects cuz i think it looks cool
     }
 
+    //A method so that other classes can get the relative location of the tape
     public RedLocation getLocate() {
         return locate;
     }
