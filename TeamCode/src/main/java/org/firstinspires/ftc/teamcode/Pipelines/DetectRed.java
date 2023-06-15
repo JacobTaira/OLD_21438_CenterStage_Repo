@@ -56,7 +56,6 @@ public class DetectRed extends OpenCvPipeline {
         }
 
         // The HSV values for the lower bound of red, and the higher bound of red
-        //TODO actually make sure that these values work
         //Values from https://cvexplained.wordpress.com/2020/04/28/color-detection-hsv/#:~:text=The%20HSV%20values%20for%20true,10%20and%20160%20to%20180.
         Scalar lowBoundRed = new Scalar(0, 100, 100);
         Scalar highBoundRed = new Scalar(4.35, 255, 255);
@@ -87,7 +86,7 @@ public class DetectRed extends OpenCvPipeline {
         //Using the Canny edge detector, we can detect the edges of the tape to make a boundary box later
         //Its just the red tape that should show up, so we don't need to be too strict with the threshold
         Mat edges = new Mat();
-        Imgproc.Canny(thresh, edges, 100, 300);// https://docs.opencv.org/3.4/da/d5c/tutorial_canny_detector.html for anybody wondering how this method works
+        Imgproc.Canny(thresh, edges, 500, 1000);// https://docs.opencv.org/3.4/da/d5c/tutorial_canny_detector.html for anybody wondering how this method works
 
 
         //While the edges should not be disconnected in this case (just a line of tape), could be potential to find disconected edges
@@ -132,8 +131,8 @@ public class DetectRed extends OpenCvPipeline {
 
         }
 
-        if(!left && !right)
-            center = true;
+        //checking if the object is in the center if it is not on the left, nor right of the image and if the color we want to detect exists in the image
+        center = !left && !right && (contours.size()>0);
 
 
         //officially stating what the location of the tape is
@@ -158,4 +157,6 @@ public class DetectRed extends OpenCvPipeline {
     public RedLocation getLocate() {
         return locate;
     }
+
+
 }
