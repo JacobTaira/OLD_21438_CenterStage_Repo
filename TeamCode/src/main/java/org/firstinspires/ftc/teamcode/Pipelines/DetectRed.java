@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.Pipelines;
 
+
+
+import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -22,16 +25,20 @@ public class DetectRed extends OpenCvPipeline {
     }
 
     private int width;//width of the image
-    RedLocation locate;
+    private Telemetry telemetry;
+    private RedLocation locate;
 
-    private Telemetry telemetry;//no real use ngl, just to make EOCV-Sim work properly
+    //no real use ngl, just to make EOCV-Sim work properly
 
     public DetectRed(int w) {
         width = w;
+
     }
 
-    public DetectRed(Telemetry tel) {//never gonna use this constructor in the real world
+    public DetectRed(Telemetry tel) { //never gonna use this constructor in the real world
+
         telemetry = tel;
+        width = 180;
     }
 
     @Override
@@ -94,7 +101,7 @@ public class DetectRed extends OpenCvPipeline {
         MatOfPoint2f[] contoursPoly = new MatOfPoint2f[contours.size()];
         Rect[] boundRect = new Rect[contours.size()];
 
-        telemetry.addData("length ", boundRect.length);
+
 
         for (int i = 0; i < contours.size(); i++) {
             contoursPoly[i] = new MatOfPoint2f();
@@ -107,12 +114,13 @@ public class DetectRed extends OpenCvPipeline {
          * image to find the relative location of the tape to the image (i.e. towards the left, right, or center)
          */
 
-        double leftImage = 0.1*width;//the left of the image can be classified as everything bellow this value
-        double rightImage = 0.8*width;//the right of the image can be classified as everything above this value
+        double leftImage = 0.25*width;//the left of the image can be classified as everything bellow this value
+        double rightImage = 0.75*width;//the right of the image can be classified as everything above this value
         //TODO need to tune these values to make sure they actually work and done under or overshoot
 
         boolean left = false;//conditionals for the if statements later
         boolean right = false;
+        boolean center = false;
 
 
         //A for loop to determine where the tape is using the contour array length
@@ -124,18 +132,30 @@ public class DetectRed extends OpenCvPipeline {
 
         }
 
+        if(!left && !right)
+            center = true;
+
 
         //officially stating what the location of the tape is
         if (left) {
             locate = RedLocation.LEFT;
         }else if (right) {
             locate = RedLocation.RIGHT;
-        }else {
+        }else if(center){
             locate = RedLocation.CENTER;
+        }else{
+            locate = RedLocation.UNDETECTED;
         }
+        telemetry.update();
+
+        telemetry.addData("Location",locate);
 
 
 
         return edges;
+    }
+
+    public RedLocation getLocate() {
+        return locate;
     }
 }
