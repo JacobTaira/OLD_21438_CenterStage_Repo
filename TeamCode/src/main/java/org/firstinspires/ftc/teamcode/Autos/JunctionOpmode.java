@@ -1,11 +1,10 @@
 package org.firstinspires.ftc.teamcode.Autos;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.acmerobotics.roadrunner.geometry.Vector2d;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.teamcode.Pipelines.DetectJunction;
 import org.firstinspires.ftc.teamcode.Pipelines.DetectRed;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
@@ -14,24 +13,26 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvWebcam;
 
-@Autonomous(name = "EOCV test")
-public class OpenCVTest extends LinearOpMode {
+public class JunctionOpmode extends LinearOpMode {
 
     private int width;
     private int height;
+
+    private double focalLenght;
     private OpenCvWebcam backCam;
 
     private Pose2d x = new Pose2d();
     private SampleMecanumDrive drive;
 
-    private DetectRed detector;
+    private DetectJunction detector;
 
     public void initialize() {
         //initializing the basic variables and objects
         width = 160;
         height = 120;
+        focalLenght = 1430;
         drive = new SampleMecanumDrive(hardwareMap);
-        detector = new DetectRed(width, telemetry);
+        detector = new DetectJunction(telemetry,focalLenght);
 
         // Initialize the back-facing camera
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -56,62 +57,18 @@ public class OpenCVTest extends LinearOpMode {
         telemetry.update();
     }
 
-
     @Override
     public void runOpMode() throws InterruptedException {
-        //initialize all of the variables
         initialize();
-        telemetry.update();
 
-        //wait until the start button is clicked before doing anything
-
-
-
-        drive.setPoseEstimate(new Pose2d(0, 0, Math.toRadians(0)));
-
-        TrajectorySequence moveLeft = drive.trajectorySequenceBuilder(new Pose2d())
-                .strafeLeft(2)
+        TrajectorySequence turnToJunction = drive.trajectorySequenceBuilder(new Pose2d())
+                .turn(Math.toRadians(detector.getAngle()))
                 .build();
-
-        TrajectorySequence moveRight = drive.trajectorySequenceBuilder(new Pose2d())
-                .strafeRight(2)
-                .build();
-
-        if(detector.getLocate() == DetectRed.RedLocation.LEFT)
-            x = moveLeft.end();
-        else if(detector.getLocate() == DetectRed.RedLocation.RIGHT)
-            x = moveRight.end();
-
-        TrajectorySequence turn = drive.trajectorySequenceBuilder(x)
-                .turn(Math.toRadians(91))
-                .build();
-
-        x = turn.end();
-
-        TrajectorySequence recorrect = drive.trajectorySequenceBuilder(x)
-                .lineTo(new Vector2d(0,10))
-                .build();
-
-        TrajectorySequence work = drive.trajectorySequenceBuilder(x)
-                .forward(10)
-                .build();
-
-
-
 
         waitForStart();
 
-
-        drive.followTrajectorySequence(turn);
-
-        x = new Pose2d(x.getX()+(detector.getDistanceFromMidPoint()*(2.2/width)),0,91);
-
-        drive.followTrajectorySequence(recorrect);
-
-        
-
-        while (opModeIsActive() && !isStopRequested())
-            drive.update();
+        if(detector.getAngle() != 0)
+            drive.followTrajectorySequence(turnToJunction);
 
 
     }

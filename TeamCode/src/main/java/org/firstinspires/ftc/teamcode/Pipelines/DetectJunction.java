@@ -20,6 +20,8 @@ public class DetectJunction extends OpenCvPipeline {
     Telemetry telemetry;
     double focalLength;
 
+    private double angle;
+
     public DetectJunction(Telemetry telemetry, double focalLength) {
         this.telemetry = telemetry;
         this.focalLength = focalLength;
@@ -71,9 +73,11 @@ public class DetectJunction extends OpenCvPipeline {
 
         Point center = findContourCenter(contours, maxContourIdx);
 
+        angle = calculateAngle(input, center, 23);
+
 
         telemetry.update();
-        telemetry.addLine("Angle is " + calculateAngle(input, center, 23));
+        telemetry.addLine("Angle is " + angle);
         return resultImage;
     }
 
@@ -103,5 +107,9 @@ public class DetectJunction extends OpenCvPipeline {
         double angleRad = Math.atan(distancePixels / focalLength);
 
         return Math.toDegrees(angleRad);
+    }
+
+    public double getAngle() {
+        return angle;
     }
 }
