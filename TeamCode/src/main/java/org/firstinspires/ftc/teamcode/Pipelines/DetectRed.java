@@ -9,9 +9,12 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.imgproc.Moments;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class DetectRed extends OpenCvPipeline {
@@ -22,14 +25,17 @@ public class DetectRed extends OpenCvPipeline {
         CENTER
     }
 
+    private double avgColorWidth;
+
     private final int width;//width of the image
     private Telemetry telemetry;
     private RedLocation locate;
 
     //no real use ngl, just to make EOCV-Sim work properly
 
-    public DetectRed(int w) {
+    public DetectRed(int w, Telemetry tel) {
         width = w;
+        telemetry = tel;
 
     }
 
@@ -110,8 +116,8 @@ public class DetectRed extends OpenCvPipeline {
          * image to find the relative location of the tape to the image (i.e. towards the left, right, or center)
          */
 
-        double leftImage = 0.25 * width;//the left of the image can be classified as everything bellow this value
-        double rightImage = 0.75 * width;//the right of the image can be classified as everything above this value
+        double leftImage = 0.05 * width;//the left of the image can be classified as everything bellow this value
+        double rightImage = 0.95 * width;//the right of the image can be classified as everything above this value
         //TODO need to tune these values to make sure they actually work and done under or overshoot
 
         boolean left = false;//conditionals for the if statements later
@@ -144,7 +150,16 @@ public class DetectRed extends OpenCvPipeline {
         }
         telemetry.update();
 
-        telemetry.addData("Location", locate);
+        telemetry.addData("Location pre run", locate);
+
+        if (!contours.isEmpty()) {
+            MatOfPoint contour = null;
+          //  if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                contour = Collections.max(contours, Comparator.comparingDouble(Imgproc::contourArea));
+          //  }
+            Moments moments = Imgproc.moments(contour);
+            avgColorWidth = moments.get_m10() / moments.get_m00();
+        }
 
 
         return edges;  //displaying edges of all red objects cuz i think it looks cool
@@ -155,5 +170,7 @@ public class DetectRed extends OpenCvPipeline {
         return locate;
     }
 
-
+    public double getDistanceFromMidPoint() {
+        return (width/2.0)-avgColorWidth;
+    }
 }
