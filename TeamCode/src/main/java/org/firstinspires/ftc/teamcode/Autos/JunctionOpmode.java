@@ -26,13 +26,24 @@ public class JunctionOpmode extends LinearOpMode {
 
     private DetectJunction detector;
 
-    public void initialize() {
+    // Kalman filter variables
+    private double prevAngle = 0;  // Previous angle measurement
+    private double prevX = 0;      // Previous estimated position
+    private double xEst = 0;       // Current estimated position
+    private double P = 1;          // Covariance matrix (initially set to 1)
+
+    // Kalman filter process and sensor noise
+    private double Q = 0.001;      // Process noise (adjust as needed)
+    private double R = 0.01;       // Sensor noise (adjust as needed)
+
+    public void initialize()
+    {
         //initializing the basic variables and objects
         width = 160;
         height = 120;
         focalLenght = 1430;
         drive = new SampleMecanumDrive(hardwareMap);
-        detector = new DetectJunction(telemetry,focalLenght);
+        detector = new DetectJunction(telemetry, focalLenght);
 
         // Initialize the back-facing camera
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
@@ -42,13 +53,15 @@ public class JunctionOpmode extends LinearOpMode {
         backCam.setMillisecondsPermissionTimeout(2500);
         backCam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
             @Override
-            public void onOpened() {
+            public void onOpened()
+            {
                 telemetry.addLine("started");
                 backCam.startStreaming(160, 120, OpenCvCameraRotation.UPRIGHT);
             }
 
             @Override
-            public void onError(int errorCode) {
+            public void onError(int errorCode)
+            {
                 telemetry.addLine("not open");
             }
         });
@@ -58,7 +71,8 @@ public class JunctionOpmode extends LinearOpMode {
     }
 
     @Override
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() throws InterruptedException
+    {
         initialize();
 
         TrajectorySequence turnToJunction = drive.trajectorySequenceBuilder(new Pose2d())
@@ -67,9 +81,37 @@ public class JunctionOpmode extends LinearOpMode {
 
         waitForStart();
 
-        if(detector.getAngle() != 0)
-            drive.followTrajectorySequence(turnToJunction);
+
+        while (opModeIsActive())
+        {
+            // Get the current angle measurement from the detector
+            double angle = detector.getAngle();
+
+            // Kalman filter prediction step
+            // Predict the next position based on the previous position and control input (angle)
+            double xPred = prevX + Math.toRadians(angle);
+
+            // Kalman filter update step
+            // Calculate the Kalman gain
+            double K = P / (P + R);
+
+            // Update the estimated position using the Kalman gain and the angle measurement
+            xEst = prevX + K * (angle - xPred);
+
+            // Update the covariance matrix (P)
+            P = (1 - K) * P + Q;
+
+            // Store the current values for the next iteration
+            prevAngle = angle;
+            prevX = xEst;
 
 
+            if (detector.getAngle() != 0)
+                drive.followTrajectorySequence(turnToJunction);
+
+
+            telemetry.addData("Estimated X:", xEst);
+            telemetry.update();
+        }
     }
 }
